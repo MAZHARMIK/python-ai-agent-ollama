@@ -25,6 +25,8 @@
 
 ## 🚀 What is this?
 
+<img src="https://github.com/MAZHARMIK/Interview_DS_Algo/blob/master/codestorywithmik.png?raw=true" align="right" width="320"/>
+
 A **local AI agent built from scratch in Python**. It talks to a model running on [Ollama](https://ollama.com) through the OpenAI-compatible API, so there is **no paid key and no framework** hiding the logic.
 
 It remembers the conversation, follows a system prompt, and can use tools **in several steps**. For example, it first finds your city, then fetches the weather for that city.
@@ -35,6 +37,8 @@ It remembers the conversation, follows a system prompt, and can use tools **in s
 
 > [!NOTE]
 > 🌱 **Work in progress:** This project is in its early phase. As the Advanced AI playlist moves ahead, it will keep evolving, and we will add things like **RAG**, persistent memory and more tools.
+
+<br clear="right"/>
 
 <br/>
 
