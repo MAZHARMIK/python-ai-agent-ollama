@@ -1,0 +1,17 @@
+# Virtual environment
+.venv/
+venv/
+
+# Secrets and local settings
+.env
+
+# Python cache and tooling
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
