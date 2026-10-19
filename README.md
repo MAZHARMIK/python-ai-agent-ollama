@@ -33,7 +33,8 @@ It remembers the conversation, follows a system prompt, and can use tools **in s
 
 > 📚 **New to AI?** Start with the [AI Fundamentals playlist](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) (tokens, embeddings, vector databases, RAG), then follow the [Advanced AI playlist](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) where this project is built step by step.
 
-> 🌱 **Work in progress:** this project is in its early phase. As the Advanced AI playlist moves ahead, it will keep evolving, and we will add things like **RAG**, persistent memory and more tools.
+> [!NOTE]
+> 🌱 **Work in progress:** This project is in its early phase. As the Advanced AI playlist moves ahead, it will keep evolving, and we will add things like **RAG**, persistent memory and more tools.
 
 <br/>
 
