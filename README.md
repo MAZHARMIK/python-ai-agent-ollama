@@ -204,21 +204,6 @@ python-ai-agent-ollama/
 
 <br/>
 
-## 🎬 Video series
-
-| # | Topic |
-|---|---|
-| 1 | Roadmap to master Advanced AI |
-| 2 | Setup: VS Code, Python, Ollama |
-| 3 | First AI call, OpenAI-style API |
-| 4 | `.env`, chat loop, roles |
-| 5 | Memory and context window |
-| 6 | System prompt and prompt engineering basics |
-| 7 | Tool calling |
-| 8 | Tool with parameters (weather) |
-| 9 | Chained tool calls |
-| 10 | Refactoring, debug logging, bug fixes |
-
 | Playlist | What it covers |
 |---|---|
 | ▶️ [**AI Fundamentals**](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) | Tokens, embeddings, vector databases and RAG. Watch this first if the basics are new to you |
@@ -236,6 +221,17 @@ python-ai-agent-ollama/
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/mazhar-imam-khan-95a34ab3/)
 
 <sub>Licensed under <a href="LICENSE">MIT</a></sub>
+
+---
+
+## ☕ Support codestorywithMIK (No Pressure)
+
+Education here is **100% free and always will be.** 💙
+If the content helped you and you'd like to support the channel with a coffee:
+
+**UPI:** `imammazhar4@ybl`
+
+---
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:ec4899,100:6366f1&height=120&section=footer" width="100%"/>
 
