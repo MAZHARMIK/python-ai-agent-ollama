@@ -12,12 +12,13 @@
 ![Qwen3](https://img.shields.io/badge/Model-qwen3:4b-6366f1?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-22c55e?style=for-the-badge)
 
-<a href="https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk">
-  <img src="https://img.shields.io/badge/Playlist-AI_Fundamentals-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="AI Fundamentals playlist"/>
-</a>
-<a href="https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ">
-  <img src="https://img.shields.io/badge/Playlist-Advanced_AI-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Advanced AI playlist"/>
-</a>
+<br/>
+
+| Playlist | What it covers |
+|---|---|
+| ![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) [**AI Fundamentals**](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) | Tokens, embeddings, vector databases and RAG. Watch this first if the basics are new to you |
+| ![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) [**Advanced AI**](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) | This project, built step by step (videos 1 to 10 in the table above) |
+
 
 </div>
 
@@ -201,13 +202,6 @@ python-ai-agent-ollama/
 - `get_user_city` is a hard-coded demo value. In a real app it would come from a profile or database.
 - The weather tool needs internet, and `wttr.in` is a free service that can be slow or down.
 - Tool output is not treated as untrusted, which is why the tools are read-only.
-
-<br/>
-
-| Playlist | What it covers |
-|---|---|
-| ▶️ [**AI Fundamentals**](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) | Tokens, embeddings, vector databases and RAG. Watch this first if the basics are new to you |
-| ▶️ [**Advanced AI**](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) | This project, built step by step (videos 1 to 10 in the table above) |
 
 <br/>
 
