@@ -161,3 +161,8 @@ while True:
         })
         print("🤖 Assistant: " + fallback)
         continue
+
+    messages.append({
+            "role": "assistant",
+            "content": full_response
+    })
