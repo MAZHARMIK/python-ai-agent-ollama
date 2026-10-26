@@ -63,6 +63,10 @@ It remembers the conversation, follows a system prompt, and can use tools **in s
 | 📝 | **Required parameters** | `get_city_weather` needs a `city`, declared in the schema |
 | 🛡️ | **Safe errors** | Tool failures go back to the model as text, so the program does not crash |
 | 🪲 | **Debug trace** | Grey step-by-step logs, switched on with `DEBUG=True` |
+| ⚡ | **Streaming responses** | The reply is printed token by token as the model generates it, so you do not wait for the full answer |
+| ⏹️ | **Stop with Ctrl+C** | Press `Ctrl+C` while the assistant is answering to stop the stream. The partial reply is kept in the history and you can ask the next question |
+| 🧵 | **Streamed tool calls** | Tool requests arrive in small chunks while streaming. The code stitches them together, including several tool calls in one step |
+| 🚧 | **Step-limit fallback** | If the model has not given a final answer after `MAX_STEPS`, you get a clear "could not finish" message instead of a hang |
 
 <br/>
 
@@ -95,6 +99,8 @@ flowchart LR
 This repeats up to `MAX_STEPS` times per question.
 
 </details>
+
+> ⚡ **Streaming:** each call to the model is made with `stream=True`. Text is printed as soon as it arrives, while any tool request is collected piece by piece and run only after the stream ends.
 
 <br/>
 
@@ -202,6 +208,7 @@ python-ai-agent-ollama/
 - `get_user_city` is a hard-coded demo value. In a real app it would come from a profile or database.
 - The weather tool needs internet, and `wttr.in` is a free service that can be slow or down.
 - Tool output is not treated as untrusted, which is why the tools are read-only.
+- If you press `Ctrl+C` while the model is answering, any half-received tool request is dropped and only the partial text is kept in the history.
 
 <br/>
 
