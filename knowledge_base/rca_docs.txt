@@ -1,0 +1,14 @@
+RCA INC-4021 - Summary
+On 14 September, the payment service was down for 47 minutes. About 3,200 customer payments failed during this time. The error seen by customers was ERR_PAY_502.
+
+RCA INC-4021 - Timeline
+At 10:05 AM a configuration change was deployed. At 10:12 AM alerts fired for failed payments. At 10:40 AM the change was rolled back. At 10:52 AM the service was fully restored.
+
+RCA INC-4021 - Root Cause
+The configuration change reduced the database connection pool from 200 to 20 connections. Under normal traffic the pool was exhausted, and new payment requests timed out.
+
+RCA INC-4021 - Fix
+The configuration change was rolled back, and the connection pool was restored to 200.
+
+RCA INC-4021 - Prevention
+Configuration changes now need a review from a second engineer and must be tested in staging with production-like traffic. A new alert fires when pool usage crosses 80 percent.

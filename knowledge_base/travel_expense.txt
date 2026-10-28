@@ -1,0 +1,11 @@
+Travel Expense - Reimbursement
+Submit expense claims within 30 days of the trip with all receipts attached. Approved claims are reimbursed within 7 working days.
+
+Travel Expense - Flights
+Economy class is allowed for flights under 6 hours. Business class needs approval from a director for longer flights.
+
+Travel Expense - Daily Allowance
+The daily allowance is 2,000 rupees for domestic trips and 60 US dollars for international trips. Hotel bills are reimbursed up to 6,000 rupees per night.
+
+Travel Expense - Receipts
+Claims without receipts are rejected, except for expenses under 500 rupees, which can be self-declared.

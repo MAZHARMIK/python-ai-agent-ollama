@@ -1,0 +1,11 @@
+Tech Docs - Code Review
+Every pull request needs 2 approvals before merging. Pull requests should be under 400 lines. Larger changes must be split.
+
+Tech Docs - Deployment Windows
+Production deployments are allowed on Tuesdays and Thursdays between 11 AM and 4 PM. There are no deployments on Fridays.
+
+Tech Docs - Branch Naming
+Branches are named feature/short-description or bugfix/ticket-id. The main branch is protected and cannot be pushed to directly.
+
+Tech Docs - On-Call
+The on-call rotation lasts one week. The handover happens every Monday at 10 AM, and the outgoing engineer writes a short handover note.
