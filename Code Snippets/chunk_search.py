@@ -114,7 +114,7 @@ def test(user_query, chunks, top_k=3):
     results = search(user_query, chunks, top_k)
 
     for r in results:
-        print(f" {r['score']:.2f} - {r['source']} - {r['size']} characters)")
+        print(f" {r['score']:.2f} - {r['source']} - {r['size']} characters.")
         print(f"   {r['text']}\n")
 
 
