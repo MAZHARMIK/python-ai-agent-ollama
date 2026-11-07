@@ -5,6 +5,9 @@ venv/
 # Secrets and local settings
 .env
 
+# Generated files
+knowledge_base/vector_store.json
+
 # Python cache and tooling
 __pycache__/
 *.pyc
