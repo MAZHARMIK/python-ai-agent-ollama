@@ -17,7 +17,7 @@
 | Playlist | What it covers |
 |---|---|
 | ![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) [**AI Fundamentals**](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) | Tokens, embeddings, vector databases and RAG. Watch this first if the basics are new to you |
-| ![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) [**Advanced AI**](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) | This project, built step by step (videos 1 to 10 in the table above) |
+| ![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=flat&logo=youtube&logoColor=white) [**Advanced AI**](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) | This project, built step by step |
 
 
 </div>
@@ -30,14 +30,14 @@
 
 A **local AI agent built from scratch in Python**. It talks to a model running on [Ollama](https://ollama.com) through the OpenAI-compatible API, so there is **no paid key and no framework** hiding the logic.
 
-It remembers the conversation, follows a system prompt, and can use tools **in several steps**. For example, it first finds your city, then fetches the weather for that city.
+It remembers the conversation, follows a system prompt, streams its answers, and can use tools **in several steps**. It can also **answer from your own documents (RAG)**: it searches a small knowledge base, answers only from what it finds, cites the source, and says so when the documents do not contain the answer.
 
 > 🎬 Built as part of the **Advanced AI** series on [codestorywithMIK](https://www.youtube.com/@codestorywithMIK).
 
 > 📚 **New to AI?** Start with the [AI Fundamentals playlist](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) (tokens, embeddings, vector databases, RAG), then follow the [Advanced AI playlist](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) where this project is built step by step.
 
 > [!NOTE]
-> 🌱 **Work in progress:** This project is in its early phase. As the Advanced AI playlist moves ahead, it will keep evolving, and we will add things like **RAG**, persistent memory and more tools.
+> 🌱 **Work in progress:** This project keeps evolving as the Advanced AI playlist moves ahead. RAG is already inside the agent. Next on the list: vector databases, persistent chat memory and more tools.
 
 <br clear="right"/>
 
@@ -47,8 +47,11 @@ It remembers the conversation, follows a system prompt, and can use tools **in s
 
 <img width="757" height="317" alt="Screenshot 2026-10-20 at 1 54 28 AM" src="https://github.com/user-attachments/assets/f314ca05-5399-4e96-9ae8-32515d55a235" />
 
+<!-- RAG SCREENSHOT: drag a screenshot of a company question here -->
+<img width="1399" height="321" alt="image" src="https://github.com/user-attachments/assets/7aa528a4-41bf-4cab-a34d-b4755664f2d4" />
 
 <div align="center"><sub>The grey lines are the debug trace: you can watch the agent think.</sub></div>
+
 
 <br/>
 
@@ -67,6 +70,10 @@ It remembers the conversation, follows a system prompt, and can use tools **in s
 | ⏹️ | **Stop with Ctrl+C** | Press `Ctrl+C` while the assistant is answering to stop the stream. The partial reply is kept in the history and you can ask the next question |
 | 🧵 | **Streamed tool calls** | Tool requests arrive in small chunks while streaming. The code stitches them together, including several tool calls in one step |
 | 🚧 | **Step-limit fallback** | If the model has not given a final answer after `MAX_STEPS`, you get a clear "could not finish" message instead of a hang |
+| 📚 | **Agentic RAG** | The model decides when to call `search_knowledge_base`. Our code runs the search, so the model never touches the vector store |
+| ✂️ | **Chunking with metadata** | Each document is split at blank lines, one section per chunk, with the heading kept inside. Every chunk carries `source` and `chunk_id` |
+| 💾 | **Saved vector store** | Chunks are embedded once and saved to `vector_store.json`, so the next start loads instantly with no re-embedding |
+| 📎 | **Grounded answers with citations** | Company answers come only from the retrieved text, with a source like `(leave_policy.txt #3)` |
 
 <br/>
 
@@ -82,9 +89,13 @@ flowchart LR
     R --> T1[get_current_time]
     R --> T2[get_city_weather]
     R --> T3[get_user_city]
+    R --> T4[search_knowledge_base]
+    T4 --> K[rag.py]
+    K --> V[vector_store.json]
     T1 -->|result as text| M
     T2 -->|result as text| M
     T3 -->|result as text| M
+    T4 -->|top 3 chunks| M
     L -->|final answer| A([Assistant])
 ```
 
@@ -104,6 +115,57 @@ This repeats up to `MAX_STEPS` times per question.
 
 <br/>
 
+## 📚 How RAG works here
+
+RAG (Retrieval-Augmented Generation) means: **find the relevant text from our own data first, and give it to the model, so it answers from that text.** Three workers do three different jobs:
+
+| Worker | Job |
+|---|---|
+| **Embedding model** (`nomic-embed-text`) | Turns text into vectors. It does not search |
+| **Our Python code** (`rag.py`) | Compares vectors with cosine similarity, ranks the chunks, returns the top 3 |
+| **Chat model** (`qwen3:4b`) | Reads the returned chunks and writes the answer |
+
+**The LLM never searches. Our Python code does.**
+
+| Phase | When | What happens |
+|---|---|---|
+| **Indexing** | Once, on the first start | Load the `.txt` files, split into chunks, embed every chunk, save to `knowledge_base/vector_store.json` |
+| **Querying** | Every company question | The model calls `search_knowledge_base`, our code embeds the question, finds the top 3 chunks and returns them as a tool message. The model answers from them |
+
+The retrieved chunks are the "augmented" part: they are added to what the model reads, only for that one call. RAG teaches the model nothing permanently.
+
+> 💡 **When you add a tool, update the system prompt too.** If the system prompt says tools are only for time and weather, the model may never call the knowledge base tool.
+
+## 🗂️ Knowledge base
+
+The sample knowledge base is a **fake company, Zorvex Technologies**, so the model cannot know its facts from training. It lives in `knowledge_base/`:
+
+| File | Topic |
+|---|---|
+| `leave_policy.txt` | Casual, earned, sick, maternity, paternity, bereavement leave |
+| `medical_policy.txt` | Insurance, claims, long medical leave, maternity cover |
+| `hr_docs.txt` | Working hours, work from home, onboarding, reviews, notice period |
+| `hiring_process.txt` | Interview stages, offer, referral bonus, joining |
+| `tech_docs.txt` | Code review, deployments, branches, on-call |
+| `rca_docs.txt` | A root cause analysis report (INC-4021) |
+| `travel_expense.txt` | Reimbursement, flights, daily allowance, receipts |
+
+**To add your own document:**
+
+1. Create a `.txt` file in `knowledge_base/`.
+2. Write a heading line first, then the text, with **one blank line between sections**. Each section becomes one chunk.
+3. **Delete `knowledge_base/vector_store.json`** and run the agent. It rebuilds the store.
+
+**Try these questions:**
+
+- `How many weeks of maternity leave do I get?`
+- `How do I get my money back after a business trip?`
+- `How much sick leave do I get, and what if I need more?`
+- `What are the core working hours at Zorvex, and what time is it now?`
+- `What was the root cause of INC-4021?`
+- `What is the company's policy on pet insurance?` (not in any document)
+- `What is Python?` (general question, no search)
+
 ## 🛠️ Available tools
 
 | Tool | What it does |
@@ -111,6 +173,7 @@ This repeats up to `MAX_STEPS` times per question.
 | `get_current_time` | Returns the current local date and time |
 | `get_city_weather(city)` | One-line weather from the free `wttr.in` service |
 | `get_user_city` | Returns the user's city (hard-coded to `Bangalore` as a demo value) |
+| `search_knowledge_base(query)` | Searches the company documents and returns the top 3 matching chunks, each labelled with its source |
 
 <br/>
 
@@ -119,8 +182,9 @@ This repeats up to `MAX_STEPS` times per question.
 **Prerequisites:** Python 3.10+ and [Ollama](https://ollama.com/download) installed and running.
 
 ```bash
-# 1. Download the model
+# 1. Download the chat model and the embedding model
 ollama pull qwen3:4b
+ollama pull nomic-embed-text
 
 # 2. Get the code
 git clone https://github.com/MAZHARMIK/python-ai-agent-ollama.git
@@ -137,15 +201,14 @@ pip install -r requirements.txt
 # 5. Create your settings file
 cp .env.example .env        # Windows: copy .env.example .env
 
-# 6. Run
+# 6. Run (from the project root)
 python simple_ai_assistant.py
 ```
 
-Type `exit`, `quit`, `bye` or `goodbye` to stop.
+Type `exit`, `quit`, `bye` or `goodbye` to stop.  
+> ⏳ **First start:** the agent builds the vector store once (it embeds every chunk), so expect a short pause before the first prompt. Later starts load `vector_store.json` instantly.
 
-<!-- SCREENSHOT 2: the terminal after step 6, showing the first prompt. -->
-<img width="490" height="165" alt="Screenshot 2026-10-20 at 1 57 07 AM" src="https://github.com/user-attachments/assets/3a0a7993-d71a-4caa-a470-49fcdd02861a" />
-
+> 📂 Always run the agent **from the project root**, because paths in `.env` are relative.
 
 <br/>
 
@@ -159,17 +222,11 @@ Settings live in `.env` (see `.env.example`):
 | `API_KEY` | Required by the client, ignored by Ollama. Any dummy value works |
 | `MODEL` | Exact model name from `ollama list`. It must support tool calling |
 | `DEBUG` | Set to `True` (capital T) to show the grey debug trace |
+| `EMBED_MODEL` | The embedding model, for example `nomic-embed-text`. This is **not** the chat model |
+| `KB_FOLDER` | Folder with your `.txt` documents. Default: `knowledge_base` |
+| `VECTOR_STORE_FILE` | Where the embedded chunks are saved. Default: `knowledge_base/vector_store.json` |
 
 > 💡 Rules for `.env`: `NAME=value`, no spaces around `=`, no quotes. Restart the program after editing it.
-
-<br/>
-
-## 📸 More screenshots
-
-<img width="490" height="165" alt="Screenshot 2026-10-20 at 1 58 20 AM" src="https://github.com/user-attachments/assets/b56a8a7f-b1c6-46ff-bc02-13b0c1901d5c" />
-<br/>
-
-<img width="490" height="165" alt="Screenshot 2026-10-20 at 2 02 02 AM" src="https://github.com/user-attachments/assets/c1719353-4edb-4c08-9f8e-78260dda1de9" />
 
 <br/>
 
@@ -181,7 +238,8 @@ Three changes in `tools.py`, and the chat loop stays untouched:
 2. 📋 Add its description to the `TOOLS` list (name, description, parameters, `required`).
 3. 🗺️ Register it in `FUNCTION_NAME_TO_FUNCTION_MAP`.
 
-> The `description` matters: the model reads it to decide when to use the tool.
+> The `description` matters: the model reads it to decide when to use the tool.  
+> Also check the system prompt in simple_ai_assistant.py, so it does not tell the model to avoid your new tool.
 
 <br/>
 
@@ -189,10 +247,15 @@ Three changes in `tools.py`, and the chat loop stays untouched:
 
 ```text
 python-ai-agent-ollama/
-├── simple_ai_assistant.py    chat loop, memory and the agent loop
+├── simple_ai_assistant.py    chat loop, memory, streaming and the agent loop
 ├── tools.py                  tool functions, TOOLS schema, run_tool()
+├── rag.py                    chunking, embeddings, vector store and search()
+├── knowledge_base/
+│   ├── *.txt                 the 7 sample documents (Zorvex Technologies)
+│   └── vector_store.json     generated on the first run (not committed)
 ├── Utilities/
 │   └── utilities.py          grey debug log() helper
+├── Code Snippets/            scratch experiments from the videos (not imported by the agent)
 ├── .env.example              settings template
 ├── requirements.txt          dependencies
 └── LICENSE                   MIT
@@ -207,8 +270,14 @@ python-ai-agent-ollama/
 - Small local models can pick the wrong tool or skip arguments. A larger model is more reliable.
 - `get_user_city` is a hard-coded demo value. In a real app it would come from a profile or database.
 - The weather tool needs internet, and `wttr.in` is a free service that can be slow or down.
-- Tool output is not treated as untrusted, which is why the tools are read-only.
+- Tool output is not treated as untrusted, which is why the tools are read-only. Only put documents you trust in the knowledge base
 - If you press `Ctrl+C` while the model is answering, any half-received tool request is dropped and only the partial text is kept in the history.
+- The vector store can go stale. Editing a document or changing `EMBED_MODEL` does not rebuild it automatically. Delete `vector_store.json` to rebuild.
+- There is no score threshold. The search always returns the top 3 chunks, even when none is relevant. Saying “I could not find this” depends on the model following the system prompt, and a small model may ignore it.
+- Retrieval can return the wrong chunk, and the model may then answer confidently from it. Turn on `DEBUG=True` to check which chunks were retrieved.
+- Embeddings are weaker on exact strings such as IDs and error codes. Real systems often add keyword search too (hybrid search).
+- Search compares the question with every chunk (brute force). Fine for a small knowledge base, too slow for millions. Vector databases solve that.
+- Splitting by blank-line sections works because the sample documents are written in sections. Other documents may need other chunking strategies.
 
 <br/>
 
