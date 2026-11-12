@@ -7,6 +7,7 @@ venv/
 
 # Generated files
 knowledge_base/vector_store.json
+chromadbStorage/
 
 # Python cache and tooling
 __pycache__/
