@@ -37,7 +37,7 @@ It remembers the conversation, follows a system prompt, streams its answers, and
 > 📚 **New to AI?** Start with the [AI Fundamentals playlist](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) (tokens, embeddings, vector databases, RAG), then follow the [Advanced AI playlist](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) where this project is built step by step.
 
 > [!NOTE]
-> 🌱 **Work in progress:** This project keeps evolving as the Advanced AI playlist moves ahead. RAG is already inside the agent. Next on the list: vector databases, persistent chat memory and more tools.
+> 🌱 **Work in progress:** This project keeps evolving as the Advanced AI playlist moves ahead. RAG is already inside the agent, and the videos also cover vector databases (Chroma). Next on the list: persistent chat memory and more tools.
 
 <br clear="right"/>
 
@@ -45,7 +45,7 @@ It remembers the conversation, follows a system prompt, streams its answers, and
 
 ## 🎥 See it in action
 
-<img width="757" height="317" alt="Screenshot 2026-10-20 at 1 54 28 AM" src="https://github.com/user-attachments/assets/f314ca05-5399-4e96-9ae8-32515d55a235" />
+<img width="757" height="317" alt="Screenshot 2026-10-20 at 1 54 28 AM" src="https://github.com/user-attachments/assets/f314ca05-5399-4e96-9ae8-32515d55a235" />
 
 <!-- RAG SCREENSHOT: drag a screenshot of a company question here -->
 <img width="1399" height="321" alt="image" src="https://github.com/user-attachments/assets/7aa528a4-41bf-4cab-a34d-b4755664f2d4" />
@@ -74,6 +74,7 @@ It remembers the conversation, follows a system prompt, streams its answers, and
 | ✂️ | **Chunking with metadata** | Each document is split at blank lines, one section per chunk, with the heading kept inside. Every chunk carries `source` and `chunk_id` |
 | 💾 | **Saved vector store** | Chunks are embedded once and saved to `vector_store.json`, so the next start loads instantly with no re-embedding |
 | 📎 | **Grounded answers with citations** | Company answers come only from the retrieved text, with a source like `(leave_policy.txt #3)` |
+| 🧪 | **Chroma example** | One standalone script in `Code Snippets/` shows a vector database with our own embeddings and persistence. Not wired into the agent |
 
 <br/>
 
@@ -166,6 +167,26 @@ The sample knowledge base is a **fake company, Zorvex Technologies**, so the mod
 - `What is the company's policy on pet insurance?` (not in any document)
 - `What is Python?` (general question, no search)
 
+## 🧪 Vector database example (Chroma)
+
+The agent keeps its vectors in a simple JSON file, `vector_store.json`, so you can see exactly what is inside. A **vector database** does the same job with more features: saving to disk, fast approximate search, update and delete by ID, metadata filtering and scale.
+
+`Code Snippets/chroma_simple.py` is a small standalone example of [Chroma](https://www.trychroma.com/), a free vector database that runs on your laptop. It:
+
+- embeds four sample chunks with our own `nomic-embed-text` model,
+- stores them with `PersistentClient` (saved to the `chromadbStorage/` folder),
+- uses cosine distance,
+- and searches with `query_embeddings`, so the question and the chunks use the same embedding model.
+
+`upsert` makes the script safe to re-run, because it updates an ID that already exists instead of failing.
+
+```bash
+pip install chromadb
+python3 "Code Snippets/chroma_simple.py"
+```
+
+> The agent itself **does not use Chroma yet**. Only `rag.py` would need to change, because the tool just calls `search()`. `chromadb` is not in `requirements.txt`, because the agent does not need it.
+
 ## 🛠️ Available tools
 
 | Tool | What it does |
@@ -255,7 +276,7 @@ python-ai-agent-ollama/
 │   └── vector_store.json     generated on the first run (not committed)
 ├── Utilities/
 │   └── utilities.py          grey debug log() helper
-├── Code Snippets/            scratch experiments from the videos (not imported by the agent)
+├── Code Snippets/            scratch experiments from the videos, including a Chroma example (not imported by the agent)
 ├── .env.example              settings template
 ├── requirements.txt          dependencies
 └── LICENSE                   MIT
@@ -270,13 +291,13 @@ python-ai-agent-ollama/
 - Small local models can pick the wrong tool or skip arguments. A larger model is more reliable.
 - `get_user_city` is a hard-coded demo value. In a real app it would come from a profile or database.
 - The weather tool needs internet, and `wttr.in` is a free service that can be slow or down.
-- Tool output is not treated as untrusted, which is why the tools are read-only. Only put documents you trust in the knowledge base
+- Tool output is not treated as untrusted, which is why the tools are read-only. Only put documents you trust in the knowledge base.
 - If you press `Ctrl+C` while the model is answering, any half-received tool request is dropped and only the partial text is kept in the history.
 - The vector store can go stale. Editing a document or changing `EMBED_MODEL` does not rebuild it automatically. Delete `vector_store.json` to rebuild.
 - There is no score threshold. The search always returns the top 3 chunks, even when none is relevant. Saying “I could not find this” depends on the model following the system prompt, and a small model may ignore it.
 - Retrieval can return the wrong chunk, and the model may then answer confidently from it. Turn on `DEBUG=True` to check which chunks were retrieved.
 - Embeddings are weaker on exact strings such as IDs and error codes. Real systems often add keyword search too (hybrid search).
-- Search compares the question with every chunk (brute force). Fine for a small knowledge base, too slow for millions. Vector databases solve that.
+- Search compares the question with every chunk (brute force). Fine for a small knowledge base, too slow for millions. Vector databases (see the Chroma example) solve that, but the agent does not use one yet.
 - Splitting by blank-line sections works because the sample documents are written in sections. Other documents may need other chunking strategies.
 
 <br/>
