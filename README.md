@@ -30,14 +30,14 @@
 
 A **local AI agent built from scratch in Python**. It talks to a model running on [Ollama](https://ollama.com) through the OpenAI-compatible API, so there is **no paid key and no framework** hiding the logic.
 
-It remembers the conversation, follows a system prompt, streams its answers, and can use tools **in several steps**. It can also **answer from your own documents (RAG)**: it searches a small knowledge base, answers only from what it finds, cites the source, and says so when the documents do not contain the answer.
+It remembers the conversation, **saves every chat to disk so you can resume it later**, follows a system prompt, streams its answers, and can use tools **in several steps**. It can also **answer from your own documents (RAG)**: it searches a small knowledge base, answers only from what it finds, cites the source, and says so when the documents do not contain the answer.
 
 > 🎬 Built as part of the **Advanced AI** series on [codestorywithMIK](https://www.youtube.com/@codestorywithMIK).
 
 > 📚 **New to AI?** Start with the [AI Fundamentals playlist](https://www.youtube.com/watch?v=fMHGSx8B9gs&list=PLUqOqHuQynYk) (tokens, embeddings, vector databases, RAG), then follow the [Advanced AI playlist](https://www.youtube.com/watch?v=f0HBW-47wwU&list=PLGSKQmIKK2zQ) where this project is built step by step.
 
 > [!NOTE]
-> 🌱 **Work in progress:** This project keeps evolving as the Advanced AI playlist moves ahead. RAG is already inside the agent, and the videos also cover vector databases (Chroma). Next on the list: persistent chat memory and more tools.
+> 🌱 **Work in progress:** This project keeps evolving as the Advanced AI playlist moves ahead. RAG and saved chats are already inside the agent, and the videos also cover vector databases (Chroma). Next on the list: trimming and summarizing long chats, and more tools.
 
 <br clear="right"/>
 
@@ -50,6 +50,8 @@ It remembers the conversation, follows a system prompt, streams its answers, and
 <!-- RAG SCREENSHOT: drag a screenshot of a company question here -->
 <img width="1399" height="321" alt="image" src="https://github.com/user-attachments/assets/7aa528a4-41bf-4cab-a34d-b4755664f2d4" />
 
+<!-- SAVED CHATS SCREENSHOT: drag a screenshot of /chats or "Continue your last chat?" here -->
+
 <div align="center"><sub>The grey lines are the debug trace: you can watch the agent think.</sub></div>
 
 
@@ -60,6 +62,11 @@ It remembers the conversation, follows a system prompt, streams its answers, and
 | | Feature | Details |
 |---|---|---|
 | 🧠 | **Conversation memory** | The full history is sent on every call, because the model itself has no memory |
+| 💬 | **Saved chats** | Every chat is saved as its own JSON file in `chat_history/`, after every completed turn. Close the agent, come back later, and continue |
+| ▶️ | **Continue or start fresh** | At start the agent asks "Continue your last chat?". Fresh is the default, and resuming is a choice |
+| ⌨️ | **Chat commands** | `/new` starts a fresh chat, `/chats` lists saved chats, `/resume` picks one. These are handled by our code, so the model never sees them |
+| 🧷 | **Safe writes** | A chat is written to a temporary file first and then swapped in with `os.replace`, so a crash while writing cannot destroy the saved chat |
+| 🚫 | **System prompt is never saved** | It is built from code on every start, so editing the prompt applies to old chats too |
 | 🎭 | **System prompt** | Sets the agent's behavior and style |
 | 🔧 | **Tool calling** | Tools are described with JSON schema and run by our own code |
 | 🔗 | **Chained tool calls** | A loop with a step limit (`MAX_STEPS = 5`) so it can never run forever |
@@ -85,6 +92,8 @@ The model **never runs code**. It only asks for a tool. Our Python code runs it,
 ```mermaid
 flowchart LR
     U([You]) --> M[simple_ai_assistant.py]
+    M <-->|save and load chats| MEM[memory.py]
+    MEM --> CH[chat_history/*.json]
     M -->|history and tool list| L{{LLM on Ollama}}
     L -->|tool request| R[tools.run_tool]
     R --> T1[get_current_time]
@@ -113,6 +122,49 @@ This repeats up to `MAX_STEPS` times per question.
 </details>
 
 > ⚡ **Streaming:** each call to the model is made with `stream=True`. Text is printed as soon as it arrives, while any tool request is collected piece by piece and run only after the stream ends.
+
+<br/>
+
+## 💬 Saved chats (persistent memory)
+
+Memory is just the `messages` list. So **saving memory means saving that list** to a file, and loading memory means reading it back. `memory.py` does exactly that, with one JSON file per chat.
+
+```text
+chat_history/
+├── 2026-11-14_10-30-05.json
+└── 2026-11-15_09-12-41.json
+```
+
+Each file looks like this:
+
+```json
+{
+  "title": "My name is Mazhar",
+  "updated": "2026-11-14 10:32:05",
+  "messages": [ ...the conversation, without the system message... ]
+}
+```
+
+**How it behaves**
+
+| Moment | What happens |
+|---|---|
+| **Start** | If saved chats exist, the agent asks `Continue your last chat "..."? (y/n)`. Answer `y` to resume, anything else starts a fresh chat |
+| **After every completed turn** | The whole conversation is saved. A new chat gets a new file named by the time it started |
+| **`/new`** | Starts a fresh chat. The old chat stays saved |
+| **`/chats`** | Lists saved chats, most recently updated first, with title, message count and last updated time |
+| **`/resume`** | Shows the list and asks for a chat number to continue |
+
+Commands are not case sensitive, and they are handled by our code, so the model never sees them.
+
+**Design choices**
+
+- **Only complete turns are saved.** A tool request is never written without its result, so a saved chat is always a valid history.
+- **The system prompt is not saved.** It is rebuilt from code on every start, so editing the prompt in `simple_ai_assistant.py` also applies to old chats.
+- **Safe write.** `memory.py` writes to a `.tmp` file first, then replaces the real file in one step.
+- **The title** is the first message of the chat, cut to 40 characters.
+
+This is **short-term memory**: one conversation at a time. Remembering facts across all chats would be a separate feature.
 
 <br/>
 
@@ -226,8 +278,11 @@ cp .env.example .env        # Windows: copy .env.example .env
 python simple_ai_assistant.py
 ```
 
-Type `exit`, `quit`, `bye` or `goodbye` to stop.  
+Type `exit`, `quit`, `bye` or `goodbye` to stop. Chat commands: `/new`, `/chats`, `/resume`.
+
 > ⏳ **First start:** the agent builds the vector store once (it embeds every chunk), so expect a short pause before the first prompt. Later starts load `vector_store.json` instantly.
+
+> 💬 **Next starts:** if you have saved chats, the agent asks whether to continue the last one. Your chats are saved in `chat_history/`.
 
 > 📂 Always run the agent **from the project root**, because paths in `.env` are relative.
 
@@ -246,6 +301,7 @@ Settings live in `.env` (see `.env.example`):
 | `EMBED_MODEL` | The embedding model, for example `nomic-embed-text`. This is **not** the chat model |
 | `KB_FOLDER` | Folder with your `.txt` documents. Default: `knowledge_base` |
 | `VECTOR_STORE_FILE` | Where the embedded chunks are saved. Default: `knowledge_base/vector_store.json` |
+| `CHAT_FOLDER` | Folder where saved chats go, one JSON file per chat. Set it to `chat_history` |
 
 > 💡 Rules for `.env`: `NAME=value`, no spaces around `=`, no quotes. Restart the program after editing it.
 
@@ -268,12 +324,14 @@ Three changes in `tools.py`, and the chat loop stays untouched:
 
 ```text
 python-ai-agent-ollama/
-├── simple_ai_assistant.py    chat loop, memory, streaming and the agent loop
+├── simple_ai_assistant.py    chat loop, streaming, the agent loop and the /new /chats /resume commands
 ├── tools.py                  tool functions, TOOLS schema, run_tool()
 ├── rag.py                    chunking, embeddings, vector store and search()
+├── memory.py                 save_chat(), load_chat(), list_chats() for saved chats
 ├── knowledge_base/
 │   ├── *.txt                 the 7 sample documents (Zorvex Technologies)
 │   └── vector_store.json     generated on the first run (not committed)
+├── chat_history/             one JSON file per saved chat (generated, not committed)
 ├── Utilities/
 │   └── utilities.py          grey debug log() helper
 ├── Code Snippets/            scratch experiments from the videos, including a Chroma example (not imported by the agent)
@@ -286,13 +344,17 @@ python-ai-agent-ollama/
 
 ## ⚠️ Honest limitations
 
-- Memory is kept in RAM and is lost when the program exits.
-- The history is not trimmed, so very long chats can exceed the model's context window.
+- Saved chats keep growing and the history is not trimmed. Resuming a very long chat can exceed the model's context window, and nothing warns you yet.
+- Chats are saved as **plain text** on disk, including tool results and retrieved document chunks. `chat_history/` is git-ignored, but nothing is encrypted. Chat titles are your first message, so they can contain private text.
+- A saved chat can hold **old tool results**. If a document changes later, the old answer in that chat still quotes the old text.
+- This is short-term memory only: one conversation at a time. The agent does not carry facts from one chat to another.
+- A damaged chat file can stop the agent at startup. If that happens, delete that file from `chat_history/`.
+- Two copies of the agent running at once can overwrite each other's chat file.
 - Small local models can pick the wrong tool or skip arguments. A larger model is more reliable.
 - `get_user_city` is a hard-coded demo value. In a real app it would come from a profile or database.
 - The weather tool needs internet, and `wttr.in` is a free service that can be slow or down.
 - Tool output is not treated as untrusted, which is why the tools are read-only. Only put documents you trust in the knowledge base.
-- If you press `Ctrl+C` while the model is answering, any half-received tool request is dropped and only the partial text is kept in the history.
+- If you press `Ctrl+C` while the model is answering, any half-received tool request is dropped and only the partial text is kept in the history. Pressing `Ctrl+C` at the `MIK:` prompt ends the program, and your last completed turn is already saved.
 - The vector store can go stale. Editing a document or changing `EMBED_MODEL` does not rebuild it automatically. Delete `vector_store.json` to rebuild.
 - There is no score threshold. The search always returns the top 3 chunks, even when none is relevant. Saying “I could not find this” depends on the model following the system prompt, and a small model may ignore it.
 - Retrieval can return the wrong chunk, and the model may then answer confidently from it. Turn on `DEBUG=True` to check which chunks were retrieved.
